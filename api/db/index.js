@@ -17,12 +17,22 @@ if (!fs.existsSync(DB_PATH)) {
 }
 
 const readDB = () => {
-    const data = fs.readFileSync(DB_PATH, 'utf-8');
-    return JSON.parse(data);
+    try {
+        if (!fs.existsSync(DB_PATH)) return { habits: [], challenges: [] };
+        const data = fs.readFileSync(DB_PATH, 'utf-8');
+        return JSON.parse(data);
+    } catch (err) {
+        console.warn('Fallback: Using in-memory database (read failed)');
+        return { habits: [], challenges: [] };
+    }
 };
 
 const writeDB = (data) => {
-    fs.writeFileSync(DB_PATH, JSON.stringify(data, null, 2));
+    try {
+        fs.writeFileSync(DB_PATH, JSON.stringify(data, null, 2));
+    } catch (err) {
+        console.warn('Fallback: Data not saved to disk (write failed)');
+    }
 };
 
 module.exports = { readDB, writeDB };

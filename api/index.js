@@ -39,14 +39,16 @@ async function connectToDatabase() {
     }
 }
 
-// Middleware to ensure DB connection
+// Middleware to ensure DB connection attempt
 app.use(async (req, res, next) => {
-    try {
-        await connectToDatabase();
-        next();
-    } catch (err) {
-        res.status(500).json({ message: 'Database connection failed' });
+    if (process.env.MONGODB_URI) {
+        try {
+            await connectToDatabase();
+        } catch (err) {
+            console.error('Proceeding in Fallback Mode due to DB error');
+        }
     }
+    next();
 });
 
 // Routes
