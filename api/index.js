@@ -15,14 +15,39 @@ app.use(express.json());
 
 const mongoose = require('mongoose');
 
-// Database Connection
-if (process.env.MONGODB_URI) {
-    mongoose.connect(process.env.MONGODB_URI)
-        .then(() => console.log('Connected to MongoDB Atlas'))
-        .catch(err => console.error('MongoDB connection error:', err));
-} else {
-    console.warn('WARNING: MONGODB_URI not found in environment variables. Database features will fail.');
+// Cached connection variable
+let cachedDb = null;
+
+async function connectToDatabase() {
+    if (cachedDb) {
+        return cachedDb;
+    }
+
+    if (!process.env.MONGODB_URI) {
+        console.warn('WARNING: MONGODB_URI not found.');
+        return null;
+    }
+
+    try {
+        const db = await mongoose.connect(process.env.MONGODB_URI);
+        cachedDb = db;
+        console.log('Connected to MongoDB Atlas');
+        return cachedDb;
+    } catch (err) {
+        console.error('MongoDB connection error:', err);
+        throw err;
+    }
 }
+
+// Middleware to ensure DB connection
+app.use(async (req, res, next) => {
+    try {
+        await connectToDatabase();
+        next();
+    } catch (err) {
+        res.status(500).json({ message: 'Database connection failed' });
+    }
+});
 
 // Routes
 app.use('/api/habits', require('./routes/habitRoutes'));

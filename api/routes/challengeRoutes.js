@@ -4,17 +4,23 @@ const Challenge = require('../models/Challenge');
 const mongoose = require('mongoose');
 const { readDB, writeDB } = require('../db');
 
-const isDBConnected = () => mongoose.connection.readyState === 1;
+// Helper to check if we should use local DB
+const useLocalDB = () => !process.env.MONGODB_URI || (process.env.NODE_ENV !== 'production' && mongoose.connection.readyState !== 1);
 
 // GET all challenges
 router.get('/', async (req, res) => {
     try {
-        if (isDBConnected()) {
+        if (!useLocalDB()) {
             const challenges = await Challenge.find();
             return res.json(challenges);
         }
-        const db = readDB();
-        res.json(db.challenges);
+
+        try {
+            const db = readDB();
+            res.json(db.challenges);
+        } catch (fileErr) {
+            res.status(500).json({ message: "Local database not available. Please configure MONGODB_URI." });
+        }
     } catch (err) {
         res.status(500).json({ message: err.message });
     }
@@ -26,7 +32,7 @@ router.post('/', async (req, res) => {
         const { title, description, durationDays, difficulty } = req.body;
         if (!title) return res.status(400).json({ message: 'Title is required' });
 
-        if (isDBConnected()) {
+        if (!useLocalDB()) {
             const newChallenge = new Challenge({
                 title,
                 description: description || '',
@@ -39,19 +45,23 @@ router.post('/', async (req, res) => {
             return res.status(201).json(savedChallenge);
         }
 
-        const db = readDB();
-        const newChallengeLocal = {
-            _id: Date.now().toString(),
-            title,
-            description: description || '',
-            durationDays: parseInt(durationDays) || 7,
-            participantsCount: 1,
-            difficulty: difficulty || 'Medium',
-            joined: true
-        };
-        db.challenges.push(newChallengeLocal);
-        writeDB(db);
-        res.status(201).json(newChallengeLocal);
+        try {
+            const db = readDB();
+            const newChallengeLocal = {
+                _id: Date.now().toString(),
+                title,
+                description: description || '',
+                durationDays: parseInt(durationDays) || 7,
+                participantsCount: 1,
+                difficulty: difficulty || 'Medium',
+                joined: true
+            };
+            db.challenges.push(newChallengeLocal);
+            writeDB(db);
+            res.status(201).json(newChallengeLocal);
+        } catch (fileErr) {
+            res.status(500).json({ message: "Local database not writable. Please configure MONGODB_URI." });
+        }
     } catch (err) {
         res.status(500).json({ message: err.message });
     }
@@ -60,7 +70,7 @@ router.post('/', async (req, res) => {
 // POST join challenge (toggle)
 router.post('/:id/join', async (req, res) => {
     try {
-        if (isDBConnected()) {
+        if (!useLocalDB()) {
             const challenge = await Challenge.findById(req.params.id);
             if (!challenge) return res.status(404).json({ message: 'Challenge not found' });
             challenge.joined = !challenge.joined;
