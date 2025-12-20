@@ -27,6 +27,4 @@ The Node.js/Express API.
   ```
 - **Database**: Currently configured to use a local JSON file (`db/database.json`) for easy testing without MongoDB installation.
 
-## Deployment
 
-See `DEPLOYMENT.md` for instructions on how to deploy to Vercel and Render.
