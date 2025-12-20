@@ -1,7 +1,7 @@
 import React from 'react';
-import { Check, Flame, Calendar, Bell } from 'lucide-react';
+import { Check, Flame, Calendar, Bell, Trash2 } from 'lucide-react';
 
-const HabitCard = ({ habit, onToggle }) => {
+const HabitCard = ({ habit, onToggle, onDelete }) => {
     const today = new Date().toLocaleDateString('en-CA');
     const isCompleted = habit.completedDates.includes(today);
 
@@ -25,7 +25,6 @@ const HabitCard = ({ habit, onToggle }) => {
                     justifyContent: 'center',
                     color: 'var(--primary)'
                 }}>
-                    {/* Placeholder Icon based on category? or just generic */}
                     <div style={{ fontWeight: 'bold', fontSize: '1.2rem' }}>{habit.title.charAt(0)}</div>
                 </div>
                 <div>
@@ -55,24 +54,49 @@ const HabitCard = ({ habit, onToggle }) => {
                 </div>
             </div>
 
-            <button
-                onClick={() => onToggle(habit._id)}
-                style={{
-                    width: '3rem',
-                    height: '3rem',
-                    borderRadius: '50%',
-                    border: isCompleted ? 'none' : '2px solid var(--border)',
-                    background: isCompleted ? 'var(--success)' : 'transparent',
-                    color: 'white',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-                    cursor: 'pointer'
-                }}
-            >
-                <Check size={20} strokeWidth={3} style={{ opacity: isCompleted ? 1 : 0, transition: 'opacity 0.2s' }} />
-            </button>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                <button
+                    onClick={() => {
+                        if (window.confirm('Are you sure you want to delete this habit?')) {
+                            onDelete(habit._id);
+                        }
+                    }}
+                    style={{
+                        background: 'transparent',
+                        border: 'none',
+                        color: 'var(--text-muted)',
+                        cursor: 'pointer',
+                        padding: '0.5rem',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        borderRadius: '8px',
+                        transition: 'all 0.2s'
+                    }}
+                    onMouseOver={(e) => e.currentTarget.style.color = '#ef4444'}
+                    onMouseOut={(e) => e.currentTarget.style.color = 'var(--text-muted)'}
+                >
+                    <Trash2 size={18} />
+                </button>
+                <button
+                    onClick={() => onToggle(habit._id)}
+                    style={{
+                        width: '3rem',
+                        height: '3rem',
+                        borderRadius: '50%',
+                        border: isCompleted ? 'none' : '2px solid var(--border)',
+                        background: isCompleted ? 'var(--success)' : 'transparent',
+                        color: 'white',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                        cursor: 'pointer'
+                    }}
+                >
+                    <Check size={20} strokeWidth={3} style={{ opacity: isCompleted ? 1 : 0, transition: 'opacity 0.2s' }} />
+                </button>
+            </div>
         </div>
     );
 };

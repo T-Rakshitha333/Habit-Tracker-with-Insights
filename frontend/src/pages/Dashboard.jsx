@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { getHabits, toggleCheckIn, createHabit } from '../services/api';
+import { getHabits, toggleCheckIn, createHabit, deleteHabit } from '../services/api';
 import HabitCard from '../components/HabitCard';
 import { Plus, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -35,6 +35,16 @@ const Dashboard = () => {
             fetchHabits(); // Refresh to update streak/state
         } catch (err) {
             console.error('Failed to toggle', err);
+        }
+    };
+
+    const handleDelete = async (id) => {
+        try {
+            await deleteHabit(id);
+            fetchHabits();
+        } catch (err) {
+            console.error('Failed to delete', err);
+            alert('Failed to delete habit');
         }
     };
 
@@ -96,7 +106,7 @@ const Dashboard = () => {
                 <h2 style={{ fontSize: '1.25rem', marginBottom: '1.5rem', fontWeight: '600' }}>Your Habits</h2>
                 {loading ? <p>Loading...</p> : (
                     habits.map(habit => (
-                        <HabitCard key={habit._id} habit={habit} onToggle={handleToggle} />
+                        <HabitCard key={habit._id} habit={habit} onToggle={handleToggle} onDelete={handleDelete} />
                     ))
                 )}
             </div>
