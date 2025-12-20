@@ -2,10 +2,11 @@
     "name": "habit-flow-monorepo",
     "version": "1.0.0",
     "scripts": {
-        "install-all": "npm install && cd backend && npm install && cd ../frontend && npm install",
-        "dev:backend": "cd backend && node server.js",
+        "install-all": "npm install && cd api && npm install && cd ../frontend && npm install",
+        "dev:backend": "cd api && node index.js",
         "dev:frontend": "cd frontend && npm run dev",
-        "dev": "npx concurrently \"npm run dev:backend\" \"npm run dev:frontend\""
+        "dev": "npx concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
+        "build": "cd frontend && npm install && npm run build"
     },
     "devDependencies": {
         "concurrently": "^9.1.0"
