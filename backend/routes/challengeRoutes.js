@@ -1,12 +1,12 @@
 const express = require('express');
 const router = express.Router();
-const { readDB, writeDB } = require('../db');
+const Challenge = require('../models/Challenge');
 
 // GET all challenges
 router.get('/', async (req, res) => {
     try {
-        const db = readDB();
-        res.json(db.challenges);
+        const challenges = await Challenge.find();
+        res.json(challenges);
     } catch (err) {
         res.status(500).json({ message: err.message });
     }
@@ -18,20 +18,17 @@ router.post('/', async (req, res) => {
         const { title, description, durationDays, difficulty } = req.body;
         if (!title) return res.status(400).json({ message: 'Title is required' });
 
-        const db = readDB();
-        const newChallenge = {
-            _id: Date.now().toString(),
+        const newChallenge = new Challenge({
             title,
             description: description || '',
             durationDays: parseInt(durationDays) || 7,
             participantsCount: 1,
             difficulty: difficulty || 'Medium',
             joined: true // Auto-join creator
-        };
+        });
 
-        db.challenges.push(newChallenge);
-        writeDB(db);
-        res.status(201).json(newChallenge);
+        const savedChallenge = await newChallenge.save();
+        res.status(201).json(savedChallenge);
     } catch (err) {
         res.status(500).json({ message: err.message });
     }
@@ -40,12 +37,10 @@ router.post('/', async (req, res) => {
 // POST join challenge (toggle)
 router.post('/:id/join', async (req, res) => {
     try {
-        const db = readDB();
-        const index = db.challenges.findIndex(c => c._id === req.params.id);
+        const challenge = await Challenge.findById(req.params.id);
 
-        if (index === -1) return res.status(404).json({ message: 'Challenge not found' });
+        if (!challenge) return res.status(404).json({ message: 'Challenge not found' });
 
-        const challenge = db.challenges[index];
         challenge.joined = !challenge.joined;
 
         if (challenge.joined) {
@@ -54,10 +49,8 @@ router.post('/:id/join', async (req, res) => {
             challenge.participantsCount -= 1;
         }
 
-        db.challenges[index] = challenge;
-        writeDB(db);
-
-        res.json(challenge);
+        const updatedChallenge = await challenge.save();
+        res.json(updatedChallenge);
     } catch (err) {
         res.status(500).json({ message: err.message });
     }

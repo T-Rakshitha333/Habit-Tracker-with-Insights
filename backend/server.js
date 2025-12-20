@@ -13,14 +13,30 @@ app.use(cors({
 }));
 app.use(express.json());
 
+const mongoose = require('mongoose');
+
+// Database Connection
+if (process.env.MONGODB_URI) {
+    mongoose.connect(process.env.MONGODB_URI)
+        .then(() => console.log('Connected to MongoDB Atlas'))
+        .catch(err => console.error('MongoDB connection error:', err));
+} else {
+    console.warn('WARNING: MONGODB_URI not found in environment variables. Database features will fail.');
+}
+
 // Routes
 app.use('/api/habits', require('./routes/habitRoutes'));
 app.use('/api/challenges', require('./routes/challengeRoutes'));
 
 app.get('/', (req, res) => {
-    res.send('Habit Tracker API is running (JSON DB Mode)');
+    res.send('Habit Tracker API is running (MongoDB Mode)');
 });
 
-app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
-});
+// For Vercel Serverless Support
+module.exports = app;
+
+if (process.env.NODE_ENV !== 'production') {
+    app.listen(PORT, () => {
+        console.log(`Server running on port ${PORT}`);
+    });
+}

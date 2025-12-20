@@ -1,13 +1,11 @@
 const express = require('express');
 const router = express.Router();
-const { readDB, writeDB } = require('../db');
+const Habit = require('../models/Habit');
 
 // GET all habits
 router.get('/', async (req, res) => {
     try {
-        const db = readDB();
-        // Sort by createdAt descending (newest first)
-        const habits = db.habits.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+        const habits = await Habit.find().sort({ createdAt: -1 });
         res.json(habits);
     } catch (err) {
         res.status(500).json({ message: err.message });
@@ -16,29 +14,24 @@ router.get('/', async (req, res) => {
 
 // POST create habit
 router.post('/', async (req, res) => {
-    console.log('Received create habit request', req.body);
     const { title, category, frequency, reminderTime } = req.body;
 
     if (!title) {
         return res.status(400).json({ message: 'Title is required' });
     }
 
-    const newHabit = {
-        _id: Date.now().toString(),
+    const newHabit = new Habit({
         title,
-        category: category || 'General',
-        frequency: frequency || 'daily',
-        reminderTime: reminderTime || '', // "HH:MM" format
+        category,
+        frequency,
+        reminderTime,
         completedDates: [],
-        streak: { current: 0, best: 0 },
-        createdAt: new Date().toISOString()
-    };
+        streak: { current: 0, best: 0 }
+    });
 
     try {
-        const db = readDB();
-        db.habits.push(newHabit);
-        writeDB(db);
-        res.status(201).json(newHabit);
+        const savedHabit = await newHabit.save();
+        res.status(201).json(savedHabit);
     } catch (err) {
         res.status(400).json({ message: err.message });
     }
@@ -48,12 +41,9 @@ router.post('/', async (req, res) => {
 router.put('/:id/checkin', async (req, res) => {
     const { date } = req.body;
     try {
-        const db = readDB();
-        const habitIndex = db.habits.findIndex(h => h._id === req.params.id);
+        const habit = await Habit.findById(req.params.id);
+        if (!habit) return res.status(404).json({ message: 'Habit not found' });
 
-        if (habitIndex === -1) return res.status(404).json({ message: 'Habit not found' });
-
-        const habit = db.habits[habitIndex];
         const dateIndex = habit.completedDates.indexOf(date);
 
         if (dateIndex === -1) {
@@ -62,13 +52,14 @@ router.put('/:id/checkin', async (req, res) => {
             habit.completedDates.splice(dateIndex, 1);
         }
 
-        // Simple streak calc
-        habit.streak.current = habit.completedDates.length; // Simplified for demo
+        // Simple streak calc (simplified for demo)
+        habit.streak.current = habit.completedDates.length;
+        if (habit.streak.current > habit.streak.best) {
+            habit.streak.best = habit.streak.current;
+        }
 
-        db.habits[habitIndex] = habit;
-        writeDB(db);
-
-        res.json(habit);
+        const updatedHabit = await habit.save();
+        res.json(updatedHabit);
     } catch (err) {
         res.status(400).json({ message: err.message });
     }
@@ -77,10 +68,7 @@ router.put('/:id/checkin', async (req, res) => {
 // DELETE habit
 router.delete('/:id', async (req, res) => {
     try {
-        const db = readDB();
-        const newHabits = db.habits.filter(h => h._id !== req.params.id);
-        db.habits = newHabits;
-        writeDB(db);
+        await Habit.findByIdAndDelete(req.params.id);
         res.json({ message: 'Habit deleted' });
     } catch (err) {
         res.status(500).json({ message: err.message });
