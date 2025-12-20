@@ -1,4 +1,4 @@
-// In-Memory Storage (Resets on server restart/sleep)
+
 let habits = [];
 let challenges = [
     { _id: '1', title: '7 Days of Hydration', description: 'Drink 3L of water every day.', durationDays: 7, participantsCount: 124, difficulty: 'Easy', joined: false },
